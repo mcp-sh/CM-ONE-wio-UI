@@ -1,24 +1,41 @@
+#include <RTC_SAMD51.h>
+#include <DateTime.h>
+#include <RTC_SAMD21.h>
+
+#include <Wire.h>
+
+#include <VL53L0X.h>
+
 #include <TFT_eSPI.h>
 #include "Free_Fonts.h"
+#include "CM_LOGO.h"
 
 // Initiate the TFT display
 TFT_eSPI tft;
 TFT_eSprite spr = TFT_eSprite(&tft);
 TFT_eSprite safetyspr = TFT_eSprite(&tft);
 
+VL53L0X tof;
+
+RTC_SAMD51 rtc;
+
 #define LCD_BACKLIGHT (72Ul) // Control Pin of LCD
 
 // Time counting for display
-int fakeLevel = 1;
 bool safety = true;
 bool sleep = false;
+bool tofConnected = true;
 unsigned long currentTime;
 unsigned long checkTime;
+unsigned long tofCurrentTime;
+unsigned long tofCheckTime;
+int level = 1;
+int oldLevel;
 
 void checkSleep() {
   checkTime = millis(); 
   if (!sleep) {
-    if (checkTime - currentTime > 10000) {
+    if (checkTime - currentTime > 20000) {
       Serial.print("Time to sleep: ");
       Serial.println(checkTime);
       digitalWrite(LCD_BACKLIGHT, LOW);
@@ -35,16 +52,60 @@ void wakeUp() {
   currentTime = millis();
 }
 
+int getDistance() {
+  int distance = constrain(tof.readRangeSingleMillimeters(), 50, 350);
+  distance = map(distance, 50,350,178,1);
+//  Serial.print("read Dist: ");
+//  Serial.println(tof.readRangeSingleMillimeters());
+  return distance;
+}
+
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
+ 
+  while (!Serial)
+  {
+    // Wait for Serial
+  }
+
+  rtc.begin();
+  DateTime now = DateTime(F(__DATE__), F(__TIME__));
+  Serial.println("adjust time!");
+  rtc.adjust(now);
+
+  now = rtc.now();
+
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(" ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+
+  
+  Wire.begin();
+
+  tof.setTimeout(1000);
+  if (!tof.init()) {
+    Serial.println("Failed to iniitialize ToF Sensor");
+    tofConnected = false;
+//    while (1) {}
+  }
   
   pinMode(WIO_5S_RIGHT, INPUT_PULLUP);
   pinMode(WIO_5S_LEFT, INPUT_PULLUP);
   pinMode(WIO_5S_PRESS, INPUT_PULLUP);
   pinMode(BUTTON_1, INPUT_PULLUP);
   pinMode(BUTTON_2, INPUT_PULLUP);
+  pinMode(D0,INPUT_PULLUP);
   
   tft.begin();
   tft.setRotation(2);
@@ -59,8 +120,9 @@ void setup()
   tft.setFreeFont(FSS18);
   tft.setTextColor(TFT_BLUE);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString("CM-ONE",120,45);
+//  tft.drawString("CM-ONE",120,45);
   tft.drawString("ON",120,160);
+  tft.drawBitmap(56,40,CM_LOGO,128,40,TFT_BLUE);
 
   spr.createSprite(178,28);
   spr.fillSprite(TFT_WHITE);
@@ -91,22 +153,40 @@ void loop()
     delay(100);
     while(!digitalRead(BUTTON_2));
   }
+  if (digitalRead(D0)) {
+    safety = false;
+//    running = false;
+  } else {
+    safety = true;
+  }
   if (!safety) {
     safetyspr.pushSprite(0,290);
+//    safetyspr.deleteSprite();
   } else {
+//    safetyspr.deleteSprite();
     tft.fillRect(0,290,240,30,TFT_WHITE);
   }
-  fakeLevel++;
-  if (fakeLevel = 178) {
-    fakeLevel = 1;
+  if (!sleep && tofConnected) {
+    tofCheckTime = millis();
+    if (tofCheckTime - tofCurrentTime > 500) {
+      level = getDistance();
+  //    Serial.print("Level: ");
+  //    Serial.println(level);
+      if (level >= oldLevel) {
+        spr.fillRect(0,0,level,28,TFT_ORANGE);
+        spr.pushSprite(31,231);
+      } else { 
+        spr.fillSprite(TFT_WHITE);
+        spr.pushSprite(31,231);
+        delay(10);
+        spr.fillRect(0,0,level,28,TFT_ORANGE);
+        spr.pushSprite(31,231);
+      }
+      tofCurrentTime = millis();
+      oldLevel = level;
+    }
   }
-  Serial.print("Level: ");
-  Serial.println(fakeLevel);
-  
- 
- 
-// checkSleep();
+  checkSleep();
 
-
-  // put your main code here, to run repeatedly:
+// put your main code here, to run repeatedly:
 }
