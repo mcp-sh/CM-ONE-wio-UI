@@ -9,6 +9,7 @@
 #include <TFT_eSPI.h>
 #include "Free_Fonts.h"
 #include "CM_LOGO.h"
+#include "PBUTTON.h"
 
 // Initiate the TFT display
 TFT_eSPI tft;
@@ -112,8 +113,8 @@ void setup()
   tft.fillScreen(TFT_WHITE);
   tft.fillRect(0,0,240,90,TFT_LIGHTGREY);
   tft.drawFastHLine(40,75,160,TFT_BLUE);
-  tft.drawRoundRect(80,130,80,60,10,TFT_BLUE);
-  tft.drawRoundRect(81,131,78,58,9,TFT_BLUE);
+//  tft.drawRoundRect(80,130,60,60,10,TFT_BLUE);
+//  tft.drawRoundRect(81,131,78,58,9,TFT_BLUE);
   
   tft.drawRect(30,230,180,30,TFT_DARKGREY);
 
@@ -121,7 +122,8 @@ void setup()
   tft.setTextColor(TFT_BLUE);
   tft.setTextDatum(MC_DATUM);
 //  tft.drawString("CM-ONE",120,45);
-  tft.drawString("ON",120,160);
+//  tft.drawString("ON",120,160);
+  tft.drawBitmap(90,130,PBUTTON,60,60,TFT_BLUE);
   tft.drawBitmap(56,40,CM_LOGO,128,40,TFT_BLUE);
 
   spr.createSprite(178,28);
