@@ -68,10 +68,10 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
  
-  while (!Serial)
-  {
-    // Wait for Serial
-  }
+//  while (!Serial)
+//  {
+//    // Wait for Serial
+//  }
 
   rtc.begin();
   DateTime now = DateTime(F(__DATE__), F(__TIME__));
