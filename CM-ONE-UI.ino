@@ -82,6 +82,7 @@ void wakeUp() {
 void runContinuous() {
   running = !running;
   currentTime = millis();
+  tft.fillCircle(220,120,5,TFT_WHITE);
 }
 
 void runTimed(int timer) {
@@ -92,6 +93,7 @@ void runTimed(int timer) {
   Serial.print("Running for ");
   Serial.print(timer);
   Serial.println(" seconds");
+  tft.fillCircle(220,120,5,TFT_GREEN);
   running = true;
 }
 
@@ -99,9 +101,10 @@ void runTimed(int timer) {
 
 void timedStop(uint32_t flag)
 {
-  Serial.println("Timed Stop. ");
+  Serial.println("Timed Stop at ");
   printDateTime();
   running = !running;
+  tft.fillCircle(220,120,5,TFT_WHITE);
   rtc.disableAlarm(0);
   currentTime = millis();
 }
@@ -172,11 +175,15 @@ void setup()
   tft.begin();
   tft.setRotation(2);
   tft.fillScreen(TFT_WHITE);
-  tft.fillRect(0,0,240,90,TFT_LIGHTGREY);
-  
+
   // Draw header
-  tft.drawRect(30,230,180,30,TFT_DARKGREY);
+  tft.fillRect(0,0,240,90,TFT_LIGHTGREY);
   tft.drawXBitmap(0,30,THEADER, THEADER_width, THEADER_height,TFT_BLUE);  
+  
+  
+  // Draw SENSOR frame
+  tft.drawRect(30,230,180,30,TFT_DARKGREY);
+  
 
   // Draw Level indicator Sprite
   levelspr.createSprite(178,28);
